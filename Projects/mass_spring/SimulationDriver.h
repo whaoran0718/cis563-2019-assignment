@@ -31,7 +31,7 @@ public:
         sphere_center = TV::Ones()*0.5;
         sphere_radius = 0.2;
         ground = 0.1;
-        collision_stiffness = 1.1*0;
+        collision_stiffness = 1.1;
     }
 
     void run(const int max_frame)

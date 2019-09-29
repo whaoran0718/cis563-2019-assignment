@@ -22,7 +22,7 @@ public:
     MassSpringSystem()
     {}
 
-    void evaluateSpringForces(std::vector<TV >& f)
+    void evaluateSpringForces(std::vector<TV>& f)
     {
         f.clear();
         f.resize(x.size(), TV::Zero());
@@ -31,9 +31,19 @@ public:
 	//  ASSIGNMENT ////////////////////////////////
 	//  Add you code to build f /////////////////// 
 	///////////////////////////////////////////////
+        for(int i = 0; i < segments.size(); i++)
+        {
+            int idxi = segments[i](0, 0);
+            int idxj = segments[i](1, 0);
+            TV X = x[idxi] - x[idxj];
+            T l = X.norm();
+            TV fij = -youngs_modulus * (l / rest_length[i] - 1) * X / l;
+            if (!node_is_fixed[idxi]) f[idxi] += fij;
+            if (!node_is_fixed[idxj]) f[idxj] += -fij;
+        }
     }
 
-    void evaluateDampingForces(std::vector<TV >& f)
+    void evaluateDampingForces(std::vector<TV>& f)
     {
         f.clear();
         f.resize(x.size(), TV::Zero());
@@ -42,6 +52,17 @@ public:
 	//  ASSIGNMENT ////////////////////////////////
 	//  Add you code to build f /////////////////// 
 	///////////////////////////////////////////////
+        for (int i = 0; i < segments.size(); i++)
+        {
+            int idxi = segments[i](0, 0);
+            int idxj = segments[i](1, 0);
+            TV X = x[idxi] - x[idxj];
+            T l = X.norm();
+            TV n = X / l;
+            TV fij = -damping_coeff * (n * n.transpose()) * (v[idxi] - v[idxj]);
+            if (!node_is_fixed[idxi]) f[idxi] += fij;
+            if (!node_is_fixed[idxj]) f[idxj] += -fij;
+        }
     }
 
     void dumpPoly(std::string filename)
