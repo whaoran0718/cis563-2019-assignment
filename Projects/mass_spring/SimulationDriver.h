@@ -31,7 +31,7 @@ public:
         sphere_center = TV::Ones()*0.5;
         sphere_radius = 0.2;
         ground = 0.1;
-        collision_stiffness = 1.1;
+        collision_stiffness = 1.01;
     }
 
     void run(const int max_frame)
@@ -55,19 +55,32 @@ public:
     {
         int N_points = ms.x.size();
         int N_dof = dim*N_points;
-	std::vector<TV> f_spring;
+	    std::vector<TV> f_spring;
         ms.evaluateSpringForces(f_spring);
-	std::vector<TV> f_damping;
-	ms.evaluateDampingForces(f_damping);
+	    std::vector<TV> f_damping;
+	    ms.evaluateDampingForces(f_damping);
 	
-	for(int p=0; p<N_points; p++){
+	    for(int p=0; p<N_points; p++){
             if(ms.node_is_fixed[p]){
-	      ms.v[p] = TV::Zero();
+	            ms.v[p] = TV::Zero();
             }
-	    else{
-	      ms.v[p] += ((f_spring[p]+f_damping[p])/ms.m[p]+gravity)*dt;
-	      ms.x[p] += ms.v[p]*dt;
-	    }
+	        else{
+                TV f_inner = f_spring[p]+f_damping[p];
+                // collide with sphere
+                T dist2center = (ms.x[p] - sphere_center).norm();
+                if (dist2center < sphere_radius)
+                {
+                    f_inner += -collision_stiffness * (ms.x[p] - sphere_center) * (1 - sphere_radius / dist2center);
+                }
+                // collide with ground
+                if (ms.x[p](1) < ground)
+                {
+                    f_inner(1) += -collision_stiffness * (ms.x[p](1) - ground);
+                }
+
+	            ms.v[p] += (f_inner/ms.m[p]+gravity)*dt;
+	            ms.x[p] += ms.v[p]*dt;
+	        }
         }
     }
 
