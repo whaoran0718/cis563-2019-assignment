@@ -65,21 +65,39 @@ public:
 	            ms.v[p] = TV::Zero();
             }
 	        else{
-                TV f_inner = f_spring[p]+f_damping[p];
-                // collide with sphere
-                T dist2center = (ms.x[p] - sphere_center).norm();
+                // TV f_inner = f_spring[p]+f_damping[p];
+                // // collide with sphere
+                // T dist2center = (ms.x[p] - sphere_center).norm();
+                // if (dist2center < sphere_radius)
+                // {
+                //     f_inner += -collision_stiffness * (ms.x[p] - sphere_center) * (1 - sphere_radius / dist2center);
+                // }
+                // // collide with ground
+                // if (ms.x[p](1) < ground)
+                // {
+                //     f_inner(1) += -collision_stiffness * (ms.x[p](1) - ground);
+                // }
+
+	            // ms.v[p] += (f_inner/ms.m[p]+gravity)*dt;
+	            // ms.x[p] += ms.v[p]*dt;
+
+                TV v_new = ms.v[p] + ((f_spring[p] + f_damping[p]) / ms.m[p] + gravity) * dt;
+                TV x_new = ms.x[p] + v_new * dt;
+                TV vec2center = x_new - sphere_center;
+                T dist2center = vec2center.norm();
                 if (dist2center < sphere_radius)
                 {
-                    f_inner += -collision_stiffness * (ms.x[p] - sphere_center) * (1 - sphere_radius / dist2center);
+                    v_new += vec2center * (sphere_radius / dist2center - 1) / dt;
+                    x_new = vec2center * sphere_radius / dist2center + sphere_center;
                 }
-                // collide with ground
-                if (ms.x[p](1) < ground)
+                if (x_new(1) < ground)
                 {
-                    f_inner(1) += -collision_stiffness * (ms.x[p](1) - ground);
+                    v_new(1) += (ground - x_new(1)) / dt;
+                    x_new(1) = ground;
                 }
 
-	            ms.v[p] += (f_inner/ms.m[p]+gravity)*dt;
-	            ms.x[p] += ms.v[p]*dt;
+                ms.v[p] = v_new;
+                ms.x[p] = x_new;
 	        }
         }
     }
